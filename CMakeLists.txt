@@ -40,6 +40,28 @@ target_link_libraries(edge_sentinel PRIVATE EdgeSentinel::core Threads::Threads)
 edge_sentinel_set_warnings(edge_sentinel)
 edge_sentinel_enable_sanitizers(edge_sentinel)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_library(edge_sentinel_linux STATIC src/linux/unix_command_server.cpp)
+    add_library(EdgeSentinel::linux ALIAS edge_sentinel_linux)
+    target_link_libraries(edge_sentinel_linux PUBLIC EdgeSentinel::core Threads::Threads)
+    target_include_directories(
+        edge_sentinel_linux
+        PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+    edge_sentinel_set_warnings(edge_sentinel_linux)
+    edge_sentinel_enable_sanitizers(edge_sentinel_linux)
+
+    add_executable(edge_sentinel_daemon apps/edge_sentinel_daemon.cpp)
+    target_link_libraries(edge_sentinel_daemon PRIVATE EdgeSentinel::linux)
+    edge_sentinel_set_warnings(edge_sentinel_daemon)
+    edge_sentinel_enable_sanitizers(edge_sentinel_daemon)
+
+    add_executable(edgectl apps/edgectl_main.cpp)
+    target_link_libraries(edgectl PRIVATE EdgeSentinel::linux)
+    edge_sentinel_set_warnings(edgectl)
+    edge_sentinel_enable_sanitizers(edgectl)
+endif()
+
 if(EDGE_SENTINEL_BUILD_TESTS)
     include(CTest)
     enable_testing()
@@ -58,4 +80,5 @@ if(EDGE_SENTINEL_BUILD_TESTS)
     edge_sentinel_add_test(bounded_queue_test tests/bounded_queue_test.cpp)
     edge_sentinel_add_test(state_machine_test tests/state_machine_test.cpp)
     edge_sentinel_add_test(runtime_test tests/runtime_test.cpp)
+    edge_sentinel_add_test(command_parser_test tests/command_parser_test.cpp)
 endif()
