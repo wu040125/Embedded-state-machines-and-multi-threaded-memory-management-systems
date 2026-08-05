@@ -1,0 +1,33 @@
+# CMake build trees
+/out/
+/build/
+/cmake-build-*/
+
+# Visual Studio generated files (the repository is CMake-first)
+/.vs/
+*.sln
+*.slnx
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Compiler and analysis artifacts
+*.obj
+*.o
+*.pdb
+*.ilk
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+
+# Runtime artifacts
+*.log
+*.sock
+/reports/
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
