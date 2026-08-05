@@ -55,8 +55,9 @@ int run(TestFunction&& test_function) {
 
 }  // namespace edge_sentinel::test
 
-#define ES_REQUIRE(expression) \
-    ::edge_sentinel::test::require((expression), #expression, __FILE__, __LINE__)
+#define ES_REQUIRE(expression)                                                         \
+    ::edge_sentinel::test::require(                                                    \
+        static_cast<bool>(expression), #expression, __FILE__, __LINE__)
 
 #define ES_REQUIRE_EQ(actual, expected)                                               \
     ::edge_sentinel::test::require_equal(                                             \

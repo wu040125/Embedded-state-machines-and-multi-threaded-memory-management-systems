@@ -54,4 +54,5 @@ if(EDGE_SENTINEL_BUILD_TESTS)
     endfunction()
 
     edge_sentinel_add_test(smoke_test tests/smoke_test.cpp)
+    edge_sentinel_add_test(memory_pool_test tests/memory_pool_test.cpp)
 endif()
