@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <cstring>
 #include <poll.h>
+#include <array>
 #include <string>
 #include <utility>
 
@@ -125,16 +126,40 @@ void UnixCommandServer::accept_loop(std::stop_token token) {
 
 void UnixCommandServer::serve_client(int client_descriptor) const {
     std::array<char, ipc::kMaximumCommandLength + 2> buffer{};
-    const ssize_t received = ::recv(client_descriptor, buffer.data(), buffer.size(), 0);
-    if (received <= 0) {
-        return;
+    std::size_t used = 0;
+
+    while (used < buffer.size()) {
+        pollfd descriptor{client_descriptor, POLLIN, 0};
+        const int poll_result = ::poll(&descriptor, 1, 1'000);
+        if (poll_result < 0 && errno == EINTR) {
+            continue;
+        }
+        if (poll_result <= 0 || (descriptor.revents & POLLIN) == 0) {
+            return;
+        }
+
+        const ssize_t received =
+            ::recv(client_descriptor, buffer.data() + used, buffer.size() - used, 0);
+        if (received < 0 && errno == EINTR) {
+            continue;
+        }
+        if (received <= 0) {
+            break;
+        }
+        used += static_cast<std::size_t>(received);
+        if (std::memchr(buffer.data(), '\n', used) != nullptr) {
+            break;
+        }
     }
 
     std::string response;
-    if (static_cast<std::size_t>(received) > ipc::kMaximumCommandLength) {
+    if (used == 0) {
+        return;
+    }
+    if (used > ipc::kMaximumCommandLength) {
         response = "error=too_long\n";
     } else {
-        response = handler_(std::string_view{buffer.data(), static_cast<std::size_t>(received)});
+        response = handler_(std::string_view{buffer.data(), used});
         if (response.empty() || response.back() != '\n') {
             response.push_back('\n');
         }
