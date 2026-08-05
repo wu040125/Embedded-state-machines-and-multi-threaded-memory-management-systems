@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.compiler }} build and test
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B out/build/ci -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -DEDGE_SENTINEL_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build out/build/ci
+      - name: Unit and integration tests
+        run: ctest --test-dir out/build/ci --output-on-failure
+      - name: Unix socket end-to-end test
+        run: bash scripts/ci_ipc_smoke.sh out/build/ci
+
+  asan-ubsan:
+    name: Address and undefined behavior sanitizers
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B out/build/asan -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=g++
+          -DEDGE_SENTINEL_ENABLE_ASAN=ON
+          -DEDGE_SENTINEL_ENABLE_UBSAN=ON
+      - name: Build
+        run: cmake --build out/build/asan
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir out/build/asan --output-on-failure
+
+  tsan:
+    name: Thread sanitizer
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B out/build/tsan -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=g++
+          -DEDGE_SENTINEL_ENABLE_TSAN=ON
+      - name: Build
+        run: cmake --build out/build/tsan
+      - name: Test
+        env:
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --test-dir out/build/tsan --output-on-failure
