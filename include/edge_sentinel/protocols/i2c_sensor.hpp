@@ -15,6 +15,7 @@ inline constexpr std::uint8_t kVibrationRegister = 0x03;
 inline constexpr std::uint8_t kCurrentRegister = 0x05;
 inline constexpr std::uint8_t kStatusRegister = 0x07;
 
+/// Minimal register-read seam used by both the Linux bus and deterministic tests.
 class II2cBus {
 public:
     virtual ~II2cBus() = default;
@@ -24,6 +25,7 @@ public:
         std::span<std::byte> output) = 0;
 };
 
+/// Decodes the documented motor-sensor register map into a complete sample.
 class I2cSensorReader final {
 public:
     explicit I2cSensorReader(II2cBus& bus) : bus_(bus) {}

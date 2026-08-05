@@ -43,6 +43,8 @@ struct RuntimeSnapshot {
     concurrency::QueueStats queue{};
 };
 
+/// Owns the sensor, control, and monitor tasks plus the fixed event pipeline.
+/// An instance is one-shot: start succeeds once and stop is idempotent.
 class EdgeRuntime final {
 public:
     static constexpr std::size_t kEventPoolCapacity = 256;
@@ -60,6 +62,7 @@ public:
     EdgeRuntime(EdgeRuntime&&) = delete;
     EdgeRuntime& operator=(EdgeRuntime&&) = delete;
 
+    /// Starts all runtime tasks and publishes startup/self-test events.
     [[nodiscard]] bool start() {
         std::lock_guard lock(lifecycle_mutex_);
         if (started_) {
@@ -84,6 +87,7 @@ public:
         return true;
     }
 
+    /// Requests fail-safe shutdown, drains the event queue, and joins all tasks.
     void stop() noexcept {
         {
             std::lock_guard lock(lifecycle_mutex_);
@@ -115,6 +119,7 @@ public:
         running_.store(false, std::memory_order_release);
     }
 
+    /// Publishes through the fixed pool and bounded queue without unbounded growth.
     [[nodiscard]] PublishResult publish(const domain::Event& event) {
         if (!accepting_events_.load(std::memory_order_acquire)) {
             return PublishResult::not_running;

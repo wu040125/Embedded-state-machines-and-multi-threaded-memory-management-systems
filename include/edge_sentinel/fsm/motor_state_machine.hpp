@@ -33,6 +33,8 @@ struct MachineSnapshot {
     std::size_t offline_count{0};
 };
 
+/// Single-owner event-driven protection state machine.
+/// Callers provide synchronization when snapshots are read from another thread.
 class MotorStateMachine final {
 public:
     explicit MotorStateMachine(ProtectionConfig config = {}) : config_(config) {}
@@ -52,6 +54,7 @@ public:
             offline_count_};
     }
 
+    /// Applies one event and reports whether a state transition occurred.
     [[nodiscard]] domain::StateTransition handle(const domain::Event& event) noexcept {
         using domain::EventKind;
         using domain::MotorState;

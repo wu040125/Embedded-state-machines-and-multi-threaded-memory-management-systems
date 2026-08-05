@@ -27,6 +27,7 @@ struct QueueStats {
     std::size_t push_timeouts{0};
 };
 
+/// Fixed-capacity MPMC queue with blocking, timed, non-blocking, and close operations.
 template <typename T, std::size_t Capacity>
 class BoundedQueue final {
     static_assert(Capacity > 0);
@@ -125,6 +126,7 @@ public:
         return value;
     }
 
+    /// Rejects new values, preserves queued values, and wakes every waiter.
     void close() {
         {
             std::lock_guard lock(mutex_);

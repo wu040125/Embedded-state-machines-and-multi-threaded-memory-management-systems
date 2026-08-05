@@ -10,6 +10,7 @@
 
 namespace edge_sentinel::linux_platform {
 
+/// Single-threaded local maintenance server for bounded request/response commands.
 class UnixCommandServer final {
 public:
     using Handler = std::function<std::string(std::string_view)>;

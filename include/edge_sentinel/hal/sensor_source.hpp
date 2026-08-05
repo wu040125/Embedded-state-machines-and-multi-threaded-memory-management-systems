@@ -4,6 +4,7 @@
 
 namespace edge_sentinel::hal {
 
+/// Platform-neutral source of complete motor sensor snapshots.
 class ISensorSource {
 public:
     virtual ~ISensorSource() = default;

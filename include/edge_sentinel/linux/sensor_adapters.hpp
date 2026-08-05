@@ -11,6 +11,7 @@
 
 namespace edge_sentinel::linux_platform {
 
+/// Linux termios adapter for the EdgeSentinel CRC16 UART stream.
 class UartSensorSource final : public hal::ISensorSource {
 public:
     explicit UartSensorSource(const std::string& device_path, int baud_rate = 115'200);
@@ -27,6 +28,7 @@ private:
     int error_number_{0};
 };
 
+/// Linux SocketCAN adapter for the documented EdgeSentinel CAN IDs.
 class SocketCanSensorSource final : public hal::ISensorSource {
 public:
     explicit SocketCanSensorSource(const std::string& interface_name);
@@ -42,6 +44,7 @@ private:
     int error_number_{0};
 };
 
+/// Linux i2c-dev implementation using a combined I2C_RDWR transaction.
 class LinuxI2cBus final : public protocols::II2cBus {
 public:
     LinuxI2cBus(const std::string& device_path, std::uint16_t device_address);

@@ -25,11 +25,14 @@ struct PoolStats {
     std::size_t invalid_releases{0};
 };
 
+/// Fixed-capacity, thread-safe storage for objects of one type.
+/// The pool must outlive every Handle created from it.
 template <typename T, std::size_t Capacity>
 class FixedObjectPool final {
     static_assert(Capacity > 0);
 
 public:
+    /// Move-only owner that destroys its object and returns the slot on reset.
     class Handle final {
     public:
         Handle() noexcept = default;
@@ -113,6 +116,7 @@ public:
     FixedObjectPool& operator=(FixedObjectPool&&) = delete;
 
     template <typename... Arguments>
+    /// Constructs an object in a free slot, or returns an empty handle on exhaustion.
     [[nodiscard]] Handle try_create(Arguments&&... arguments) {
         std::lock_guard lock(mutex_);
         if (free_head_ == kNoSlot) {
@@ -135,6 +139,7 @@ public:
         return Handle{this, object};
     }
 
+    /// Destroys a pool object and diagnoses foreign or already-free pointers.
     [[nodiscard]] PoolReleaseResult destroy(T* object) noexcept {
         std::lock_guard lock(mutex_);
         const std::size_t index = find_slot(object);
@@ -158,6 +163,7 @@ public:
         return PoolReleaseResult::released;
     }
 
+    /// Returns a lock-protected point-in-time statistics snapshot.
     [[nodiscard]] PoolStats stats() const noexcept {
         std::lock_guard lock(mutex_);
         PoolStats snapshot = stats_;
