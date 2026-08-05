@@ -41,7 +41,12 @@ edge_sentinel_set_warnings(edge_sentinel)
 edge_sentinel_enable_sanitizers(edge_sentinel)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    add_library(edge_sentinel_linux STATIC src/linux/unix_command_server.cpp)
+    add_library(
+        edge_sentinel_linux
+        STATIC
+            src/linux/sensor_adapters.cpp
+            src/linux/unix_command_server.cpp
+    )
     add_library(EdgeSentinel::linux ALIAS edge_sentinel_linux)
     target_link_libraries(edge_sentinel_linux PUBLIC EdgeSentinel::core Threads::Threads)
     target_include_directories(
@@ -81,4 +86,5 @@ if(EDGE_SENTINEL_BUILD_TESTS)
     edge_sentinel_add_test(state_machine_test tests/state_machine_test.cpp)
     edge_sentinel_add_test(runtime_test tests/runtime_test.cpp)
     edge_sentinel_add_test(command_parser_test tests/command_parser_test.cpp)
+    edge_sentinel_add_test(protocols_test tests/protocols_test.cpp)
 endif()
