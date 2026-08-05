@@ -40,6 +40,13 @@ target_link_libraries(edge_sentinel PRIVATE EdgeSentinel::core Threads::Threads)
 edge_sentinel_set_warnings(edge_sentinel)
 edge_sentinel_enable_sanitizers(edge_sentinel)
 
+if(EDGE_SENTINEL_BUILD_BENCHMARKS)
+    add_executable(edge_sentinel_benchmark benchmarks/event_pipeline_benchmark.cpp)
+    target_link_libraries(edge_sentinel_benchmark PRIVATE EdgeSentinel::core Threads::Threads)
+    edge_sentinel_set_warnings(edge_sentinel_benchmark)
+    edge_sentinel_enable_sanitizers(edge_sentinel_benchmark)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(
         edge_sentinel_linux
