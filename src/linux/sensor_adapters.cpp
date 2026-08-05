@@ -67,11 +67,14 @@ UartSensorSource::UartSensorSource(const std::string& device_path, int baud_rate
     ::cfmakeraw(&settings);
     static_cast<void>(::cfsetispeed(&settings, speed));
     static_cast<void>(::cfsetospeed(&settings, speed));
-    settings.c_cflag |= CLOCAL | CREAD;
-    settings.c_cflag &= ~CSTOPB;
-    settings.c_cflag &= ~CRTSCTS;
-    settings.c_cc[VMIN] = 0;
-    settings.c_cc[VTIME] = 1;
+    settings.c_cflag = static_cast<tcflag_t>(
+        settings.c_cflag | static_cast<tcflag_t>(CLOCAL | CREAD));
+    settings.c_cflag = static_cast<tcflag_t>(
+        settings.c_cflag & ~static_cast<tcflag_t>(CSTOPB));
+    settings.c_cflag = static_cast<tcflag_t>(
+        settings.c_cflag & ~static_cast<tcflag_t>(CRTSCTS));
+    settings.c_cc[VMIN] = static_cast<cc_t>(0);
+    settings.c_cc[VTIME] = static_cast<cc_t>(1);
     if (::tcsetattr(candidate.get(), TCSANOW, &settings) != 0) {
         error_number_ = errno;
         return;
@@ -159,8 +162,8 @@ domain::SensorSample SocketCanSensorSource::read() {
         const ssize_t count = ::read(descriptor_.get(), &frame, sizeof(frame));
         if (count == static_cast<ssize_t>(sizeof(frame))) {
             protocols::CanMessage message;
-            message.id = frame.can_id & CAN_EFF_MASK;
-            message.length = frame.can_dlc;
+            message.id = static_cast<std::uint32_t>(frame.can_id & CAN_EFF_MASK);
+            message.length = static_cast<std::uint8_t>(frame.can_dlc);
             for (std::size_t index = 0; index < message.data.size(); ++index) {
                 message.data[index] = frame.data[index];
             }
@@ -211,18 +214,18 @@ bool LinuxI2cBus::read_register(std::uint8_t reg, std::span<std::byte> output) {
 
     std::uint8_t register_value = reg;
     i2c_msg messages[2]{};
-    messages[0].addr = device_address_;
-    messages[0].flags = 0;
-    messages[0].len = 1;
+    messages[0].addr = static_cast<__u16>(device_address_);
+    messages[0].flags = static_cast<__u16>(0);
+    messages[0].len = static_cast<__u16>(1);
     messages[0].buf = &register_value;
-    messages[1].addr = device_address_;
-    messages[1].flags = I2C_M_RD;
-    messages[1].len = static_cast<std::uint16_t>(output.size());
+    messages[1].addr = static_cast<__u16>(device_address_);
+    messages[1].flags = static_cast<__u16>(I2C_M_RD);
+    messages[1].len = static_cast<__u16>(output.size());
     messages[1].buf = reinterpret_cast<std::uint8_t*>(output.data());
 
     i2c_rdwr_ioctl_data transaction{};
     transaction.msgs = messages;
-    transaction.nmsgs = 2;
+    transaction.nmsgs = static_cast<__u32>(2);
     if (::ioctl(descriptor_.get(), I2C_RDWR, &transaction) != 2) {
         error_number_ = errno;
         return false;

@@ -23,16 +23,15 @@ struct UartFrame {
 };
 
 [[nodiscard]] inline std::uint16_t crc16_ccitt(std::span<const std::byte> bytes) noexcept {
-    std::uint16_t crc = 0xFFFFU;
+    std::uint32_t crc = 0xFFFFU;
     for (const std::byte byte : bytes) {
-        crc ^= static_cast<std::uint16_t>(std::to_integer<std::uint8_t>(byte)) << 8U;
+        crc ^= static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(byte)) << 8U;
         for (int bit = 0; bit < 8; ++bit) {
-            crc = (crc & 0x8000U) != 0U
-                      ? static_cast<std::uint16_t>((crc << 1U) ^ 0x1021U)
-                      : static_cast<std::uint16_t>(crc << 1U);
+            crc = (crc & 0x8000U) != 0U ? (crc << 1U) ^ 0x1021U : crc << 1U;
+            crc &= 0xFFFFU;
         }
     }
-    return crc;
+    return static_cast<std::uint16_t>(crc);
 }
 
 [[nodiscard]] inline std::array<std::byte, kUartFrameSize> encode_uart_frame(
@@ -41,7 +40,7 @@ struct UartFrame {
     bytes[0] = kUartMagicFirst;
     bytes[1] = kUartMagicSecond;
     bytes[2] = kUartProtocolVersion;
-    bytes[3] = static_cast<std::byte>(frame.kind);
+    bytes[3] = static_cast<std::byte>(static_cast<std::uint8_t>(frame.kind));
     bytes[4] = static_cast<std::byte>((frame.sequence >> 8U) & 0xFFU);
     bytes[5] = static_cast<std::byte>(frame.sequence & 0xFFU);
 
